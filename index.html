@@ -1,0 +1,460 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Piano Alimentare</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 900px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 15px;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.2);
+            overflow: hidden;
+        }
+
+        .header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 30px;
+            text-align: center;
+        }
+
+        .header h1 {
+            font-size: 2rem;
+            margin-bottom: 10px;
+        }
+
+        .filters {
+            display: flex;
+            gap: 15px;
+            justify-content: center;
+            flex-wrap: wrap;
+            padding: 25px;
+            background: #f8f9fa;
+            border-bottom: 1px solid #e0e0e0;
+        }
+
+        .filter-group {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+
+        .filter-group label {
+            font-weight: 600;
+            color: #333;
+            font-size: 0.9rem;
+        }
+
+        select {
+            padding: 10px 15px;
+            border: 2px solid #ddd;
+            border-radius: 8px;
+            font-size: 1rem;
+            background: white;
+            cursor: pointer;
+            transition: all 0.3s;
+            min-width: 180px;
+        }
+
+        select:hover {
+            border-color: #667eea;
+        }
+
+        select:focus {
+            outline: none;
+            border-color: #667eea;
+            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+        }
+
+        .meals-container {
+            padding: 30px;
+        }
+
+        .meal-card {
+            background: #fff;
+            border: 2px solid #e0e0e0;
+            border-radius: 12px;
+            padding: 20px;
+            margin-bottom: 20px;
+            transition: all 0.3s;
+        }
+
+        .meal-card:hover {
+            box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+            transform: translateY(-2px);
+        }
+
+        .meal-title {
+            font-size: 1.3rem;
+            color: #667eea;
+            font-weight: 700;
+            margin-bottom: 15px;
+            padding-bottom: 10px;
+            border-bottom: 2px solid #f0f0f0;
+        }
+
+        .meal-details {
+            display: grid;
+            gap: 10px;
+        }
+
+        .detail-row {
+            display: flex;
+            gap: 10px;
+        }
+
+        .detail-label {
+            font-weight: 600;
+            color: #555;
+            min-width: 90px;
+        }
+
+        .detail-value {
+            color: #333;
+            flex: 1;
+        }
+
+        .note {
+            margin-top: 10px;
+            padding: 10px;
+            background: #fff3cd;
+            border-left: 4px solid #ffc107;
+            border-radius: 4px;
+            font-size: 0.9rem;
+            color: #856404;
+        }
+
+        .no-data {
+            text-align: center;
+            padding: 60px 20px;
+            color: #999;
+            font-size: 1.1rem;
+        }
+
+        @media (max-width: 600px) {
+            .filters {
+                flex-direction: column;
+            }
+
+            select {
+                width: 100%;
+            }
+
+            .detail-row {
+                flex-direction: column;
+            }
+
+            .detail-label {
+                min-width: auto;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🍽️ Piano Alimentare Settimanale</h1>
+            <p>Seleziona persona e giorno per visualizzare i pasti</p>
+        </div>
+
+        <div class="filters">
+            <div class="filter-group">
+                <label for="personSelect">Persona:</label>
+                <select id="personSelect">
+                    <option value="">-- Seleziona --</option>
+                </select>
+            </div>
+            <div class="filter-group">
+                <label for="daySelect">Giorno:</label>
+                <select id="daySelect">
+                    <option value="">-- Seleziona --</option>
+                </select>
+            </div>
+        </div>
+
+        <div class="meals-container" id="mealsContainer">
+            <div class="no-data">Seleziona una persona e un giorno per visualizzare i pasti</div>
+        </div>
+    </div>
+
+    <script>
+        const csvData = `Giorno;Pasto;Persona;Pietanza;Quantità;Note
+Lunedì;Colazione;Paolo;Yogurt greco 0% + fiocchi di frumento integrale + miele + noci;150g yogurt + 30g fiocchi + 1 cucchiaino miele + 10g noci;Alternare frutta o cioccolato fondente 2x/settimana
+Lunedì;Spuntino mattina;Paolo;Frutta fresca di stagione;150g;Frutta di stagione
+Lunedì;Pranzo;Paolo;Pasta integrale al pomodoro + mozzarella light + verdure;80g pasta + 100g mozzarella + 200g verdure + 3 cucchiaini olio evo;Verdure a piacere
+Lunedì;Merenda;Paolo;Pane integrale con confettura e burro di arachidi;30g pane + 2 cucchiaini confettura + 5g burro arachidi;Bere acqua o tisana
+Lunedì;Cena;Paolo;Petto di pollo ai ferri + verdure + pane integrale;200g pollo + 200g verdure + 80g pane + 2 cucchiaini olio evo;Usare poco sale, preferire erbe aromatiche
+Lunedì;Colazione;Raffaella;Porridge di avena con frutta e cioccolato fondente;150g bevanda vegetale + 30g avena + 150g frutta + 10g cioccolato 80%;Alternare frutta o cioccolato fondente 2x/settimana
+Lunedì;Spuntino mattina;Raffaella;Frutta fresca di stagione;150g;Frutta di stagione
+Lunedì;Pranzo;Raffaella;Riso con pollo e verdure;70g riso + 200g pollo + 200g verdure + 2 cucchiaini olio evo;Verdure a piacere
+Lunedì;Merenda;Raffaella;Frutta secca + gallette di riso;10g frutta secca + 20g gallette;Bere acqua o tisana
+Lunedì;Cena;Raffaella;Pesce al forno con patate e verdure;200g pesce + 200g patate + 200g verdure + 2 cucchiaini olio evo;Usare poco sale, preferire erbe aromatiche
+Lunedì;Colazione;Marco;Yogurt greco 0% + fiocchi integrali + miele + frutta secca;130g yogurt + 25g fiocchi + 1 cucchiaino miele + 8g noci;Alternare frutta o cioccolato fondente 2x/settimana
+Lunedì;Spuntino mattina;Marco;Frutta fresca di stagione;150g;Frutta di stagione
+Lunedì;Pranzo;Marco;Pasta integrale con tonno e verdure miste;80g pasta + 100g tonno + 200g verdure + 3 cucchiaini olio evo;Verdure a piacere
+Lunedì;Merenda;Marco;Pane integrale con confettura e burro di arachidi;25g pane + 2 cucchiaini confettura + 5g burro arachidi;Bere acqua o tisana
+Lunedì;Cena;Marco;Merluzzo gratinato + verdure + pane integrale;200g merluzzo + 200g verdure + 70g pane + 2 cucchiaini olio evo;Usare poco sale, preferire erbe aromatiche
+Lunedì;Colazione;Mattia;Yogurt greco 0% + fiocchi integrali + miele + frutta secca;120g yogurt + 25g fiocchi + 1 cucchiaino miele + 8g noci;Alternare frutta o cioccolato fondente 2x/settimana
+Lunedì;Spuntino mattina;Mattia;Frutta fresca di stagione + 1 yogurt piccolo;150g frutta + 100g yogurt;Frutta di stagione
+Lunedì;Pranzo;Mattia;Riso con pollo e verdure;70g riso + 170g pollo + 200g verdure + 2 cucchiaini olio evo;Verdure a piacere
+Lunedì;Merenda;Mattia;Yogurt greco + frutta fresca;100g yogurt + 150g frutta;Bere acqua o tisana
+Lunedì;Cena;Mattia;Frittata con verdure e pane;2 uova + 200g verdure + 60g pane + 2 cucchiaini olio evo;Usare poco sale, preferire erbe aromatiche
+Lunedì;Spuntino extra;Mattia;Barretta ai cereali o frutta secca (10g);10g barretta o frutta secca;Solo nei giorni di allenamento
+Martedì;Colazione;Paolo;Yogurt greco 0% + fiocchi di frumento integrale + miele + noci;150g yogurt + 30g fiocchi + 1 cucchiaino miele + 10g noci;Alternare frutta o cioccolato fondente 2x/settimana
+Martedì;Spuntino mattina;Paolo;Frutta fresca di stagione;150g;Frutta di stagione
+Martedì;Pranzo;Paolo;Pasta integrale al pomodoro + mozzarella light + verdure;80g pasta + 100g mozzarella + 200g verdure + 3 cucchiaini olio evo;Verdure a piacere
+Martedì;Merenda;Paolo;Pane integrale con confettura e burro di arachidi;30g pane + 2 cucchiaini confettura + 5g burro arachidi;Bere acqua o tisana
+Martedì;Cena;Paolo;Petto di pollo ai ferri + verdure + pane integrale;200g pollo + 200g verdure + 80g pane + 2 cucchiaini olio evo;Usare poco sale, preferire erbe aromatiche
+Martedì;Colazione;Raffaella;Porridge di avena con frutta e cioccolato fondente;150g bevanda vegetale + 30g avena + 150g frutta + 10g cioccolato 80%;Alternare frutta o cioccolato fondente 2x/settimana
+Martedì;Spuntino mattina;Raffaella;Frutta fresca di stagione;150g;Frutta di stagione
+Martedì;Pranzo;Raffaella;Riso con pollo e verdure;70g riso + 200g pollo + 200g verdure + 2 cucchiaini olio evo;Verdure a piacere
+Martedì;Merenda;Raffaella;Frutta secca + gallette di riso;10g frutta secca + 20g gallette;Bere acqua o tisana
+Martedì;Cena;Raffaella;Pesce al forno con patate e verdure;200g pesce + 200g patate + 200g verdure + 2 cucchiaini olio evo;Usare poco sale, preferire erbe aromatiche
+Martedì;Colazione;Marco;Yogurt greco 0% + fiocchi integrali + miele + frutta secca;130g yogurt + 25g fiocchi + 1 cucchiaino miele + 8g noci;Alternare frutta o cioccolato fondente 2x/settimana
+Martedì;Spuntino mattina;Marco;Frutta fresca di stagione;150g;Frutta di stagione
+Martedì;Pranzo;Marco;Pasta integrale con tonno e verdure miste;80g pasta + 100g tonno + 200g verdure + 3 cucchiaini olio evo;Verdure a piacere
+Martedì;Merenda;Marco;Pane integrale con confettura e burro di arachidi;25g pane + 2 cucchiaini confettura + 5g burro arachidi;Bere acqua o tisana
+Martedì;Cena;Marco;Merluzzo gratinato + verdure + pane integrale;200g merluzzo + 200g verdure + 70g pane + 2 cucchiaini olio evo;Usare poco sale, preferire erbe aromatiche
+Martedì;Colazione;Mattia;Yogurt greco 0% + fiocchi integrali + miele + frutta secca;120g yogurt + 25g fiocchi + 1 cucchiaino miele + 8g noci;Alternare frutta o cioccolato fondente 2x/settimana
+Martedì;Spuntino mattina;Mattia;Frutta fresca di stagione + 1 yogurt piccolo;150g frutta + 100g yogurt;Frutta di stagione
+Martedì;Pranzo;Mattia;Riso con pollo e verdure;70g riso + 170g pollo + 200g verdure + 2 cucchiaini olio evo;Verdure a piacere
+Martedì;Merenda;Mattia;Yogurt greco + frutta fresca;100g yogurt + 150g frutta;Bere acqua o tisana
+Martedì;Cena;Mattia;Frittata con verdure e pane;2 uova + 200g verdure + 60g pane + 2 cucchiaini olio evo;Usare poco sale, preferire erbe aromatiche
+Martedì;Spuntino extra;Mattia;Barretta ai cereali o frutta secca (10g);10g barretta o frutta secca;Solo nei giorni di allenamento
+Mercoledì;Colazione;Paolo;Yogurt greco 0% + fiocchi di frumento integrale + miele + noci;150g yogurt + 30g fiocchi + 1 cucchiaino miele + 10g noci;Alternare frutta o cioccolato fondente 2x/settimana
+Mercoledì;Spuntino mattina;Paolo;Frutta fresca di stagione;150g;Frutta di stagione
+Mercoledì;Pranzo;Paolo;Pasta integrale al pomodoro + mozzarella light + verdure;80g pasta + 100g mozzarella + 200g verdure + 3 cucchiaini olio evo;Verdure a piacere
+Mercoledì;Merenda;Paolo;Pane integrale con confettura e burro di arachidi;30g pane + 2 cucchiaini confettura + 5g burro arachidi;Bere acqua o tisana
+Mercoledì;Cena;Paolo;Petto di pollo ai ferri + verdure + pane integrale;200g pollo + 200g verdure + 80g pane + 2 cucchiaini olio evo;Usare poco sale, preferire erbe aromatiche
+Mercoledì;Colazione;Raffaella;Porridge di avena con frutta e cioccolato fondente;150g bevanda vegetale + 30g avena + 150g frutta + 10g cioccolato 80%;Alternare frutta o cioccolato fondente 2x/settimana
+Mercoledì;Spuntino mattina;Raffaella;Frutta fresca di stagione;150g;Frutta di stagione
+Mercoledì;Pranzo;Raffaella;Riso con pollo e verdure;70g riso + 200g pollo + 200g verdure + 2 cucchiaini olio evo;Verdure a piacere
+Mercoledì;Merenda;Raffaella;Frutta secca + gallette di riso;10g frutta secca + 20g gallette;Bere acqua o tisana
+Mercoledì;Cena;Raffaella;Pesce al forno con patate e verdure;200g pesce + 200g patate + 200g verdure + 2 cucchiaini olio evo;Usare poco sale, preferire erbe aromatiche
+Mercoledì;Colazione;Marco;Yogurt greco 0% + fiocchi integrali + miele + frutta secca;130g yogurt + 25g fiocchi + 1 cucchiaino miele + 8g noci;Alternare frutta o cioccolato fondente 2x/settimana
+Mercoledì;Spuntino mattina;Marco;Frutta fresca di stagione;150g;Frutta di stagione
+Mercoledì;Pranzo;Marco;Pasta integrale con tonno e verdure miste;80g pasta + 100g tonno + 200g verdure + 3 cucchiaini olio evo;Verdure a piacere
+Mercoledì;Merenda;Marco;Pane integrale con confettura e burro di arachidi;25g pane + 2 cucchiaini confettura + 5g burro arachidi;Bere acqua o tisana
+Mercoledì;Cena;Marco;Merluzzo gratinato + verdure + pane integrale;200g merluzzo + 200g verdure + 70g pane + 2 cucchiaini olio evo;Usare poco sale, preferire erbe aromatiche
+Mercoledì;Colazione;Mattia;Yogurt greco 0% + fiocchi integrali + miele + frutta secca;120g yogurt + 25g fiocchi + 1 cucchiaino miele + 8g noci;Alternare frutta o cioccolato fondente 2x/settimana
+Mercoledì;Spuntino mattina;Mattia;Frutta fresca di stagione + 1 yogurt piccolo;150g frutta + 100g yogurt;Frutta di stagione
+Mercoledì;Pranzo;Mattia;Riso con pollo e verdure;70g riso + 170g pollo + 200g verdure + 2 cucchiaini olio evo;Verdure a piacere
+Mercoledì;Merenda;Mattia;Yogurt greco + frutta fresca;100g yogurt + 150g frutta;Bere acqua o tisana
+Mercoledì;Cena;Mattia;Frittata con verdure e pane;2 uova + 200g verdure + 60g pane + 2 cucchiaini olio evo;Usare poco sale, preferire erbe aromatiche
+Mercoledì;Spuntino extra;Mattia;Barretta ai cereali o frutta secca (10g);10g barretta o frutta secca;Solo nei giorni di allenamento
+Giovedì;Colazione;Paolo;Yogurt greco 0% + fiocchi di frumento integrale + miele + noci;150g yogurt + 30g fiocchi + 1 cucchiaino miele + 10g noci;Alternare frutta o cioccolato fondente 2x/settimana
+Giovedì;Spuntino mattina;Paolo;Frutta fresca di stagione;150g;Frutta di stagione
+Giovedì;Pranzo;Paolo;Pasta integrale al pomodoro + mozzarella light + verdure;80g pasta + 100g mozzarella + 200g verdure + 3 cucchiaini olio evo;Verdure a piacere
+Giovedì;Merenda;Paolo;Pane integrale con confettura e burro di arachidi;30g pane + 2 cucchiaini confettura + 5g burro arachidi;Bere acqua o tisana
+Giovedì;Cena;Paolo;Petto di pollo ai ferri + verdure + pane integrale;200g pollo + 200g verdure + 80g pane + 2 cucchiaini olio evo;Usare poco sale, preferire erbe aromatiche
+Giovedì;Colazione;Raffaella;Porridge di avena con frutta e cioccolato fondente;150g bevanda vegetale + 30g avena + 150g frutta + 10g cioccolato 80%;Alternare frutta o cioccolato fondente 2x/settimana
+Giovedì;Spuntino mattina;Raffaella;Frutta fresca di stagione;150g;Frutta di stagione
+Giovedì;Pranzo;Raffaella;Riso con pollo e verdure;70g riso + 200g pollo + 200g verdure + 2 cucchiaini olio evo;Verdure a piacere
+Giovedì;Merenda;Raffaella;Frutta secca + gallette di riso;10g frutta secca + 20g gallette;Bere acqua o tisana
+Giovedì;Cena;Raffaella;Pesce al forno con patate e verdure;200g pesce + 200g patate + 200g verdure + 2 cucchiaini olio evo;Usare poco sale, preferire erbe aromatiche
+Giovedì;Colazione;Marco;Yogurt greco 0% + fiocchi integrali + miele + frutta secca;130g yogurt + 25g fiocchi + 1 cucchiaino miele + 8g noci;Alternare frutta o cioccolato fondente 2x/settimana
+Giovedì;Spuntino mattina;Marco;Frutta fresca di stagione;150g;Frutta di stagione
+Giovedì;Pranzo;Marco;Pasta integrale con tonno e verdure miste;80g pasta + 100g tonno + 200g verdure + 3 cucchiaini olio evo;Verdure a piacere
+Giovedì;Merenda;Marco;Pane integrale con confettura e burro di arachidi;25g pane + 2 cucchiaini confettura + 5g burro arachidi;Bere acqua o tisana
+Giovedì;Cena;Marco;Merluzzo gratinato + verdure + pane integrale;200g merluzzo + 200g verdure + 70g pane + 2 cucchiaini olio evo;Usare poco sale, preferire erbe aromatiche
+Giovedì;Colazione;Mattia;Yogurt greco 0% + fiocchi integrali + miele + frutta secca;120g yogurt + 25g fiocchi + 1 cucchiaino miele + 8g noci;Alternare frutta o cioccolato fondente 2x/settimana
+Giovedì;Spuntino mattina;Mattia;Frutta fresca di stagione + 1 yogurt piccolo;150g frutta + 100g yogurt;Frutta di stagione
+Giovedì;Pranzo;Mattia;Riso con pollo e verdure;70g riso + 170g pollo + 200g verdure + 2 cucchiaini olio evo;Verdure a piacere
+Giovedì;Merenda;Mattia;Yogurt greco + frutta fresca;100g yogurt + 150g frutta;Bere acqua o tisana
+Giovedì;Cena;Mattia;Frittata con verdure e pane;2 uova + 200g verdure + 60g pane + 2 cucchiaini olio evo;Usare poco sale, preferire erbe aromatiche
+Giovedì;Spuntino extra;Mattia;Barretta ai cereali o frutta secca (10g);10g barretta o frutta secca;Solo nei giorni di allenamento
+Venerdì;Colazione;Paolo;Yogurt greco 0% + fiocchi di frumento integrale + miele + noci;150g yogurt + 30g fiocchi + 1 cucchiaino miele + 10g noci;Alternare frutta o cioccolato fondente 2x/settimana
+Venerdì;Spuntino mattina;Paolo;Frutta fresca di stagione;150g;Frutta di stagione
+Venerdì;Pranzo;Paolo;Pasta integrale al pomodoro + mozzarella light + verdure;80g pasta + 100g mozzarella + 200g verdure + 3 cucchiaini olio evo;Verdure a piacere
+Venerdì;Merenda;Paolo;Pane integrale con confettura e burro di arachidi;30g pane + 2 cucchiaini confettura + 5g burro arachidi;Bere acqua o tisana
+Venerdì;Cena;Paolo;Petto di pollo ai ferri + verdure + pane integrale;200g pollo + 200g verdure + 80g pane + 2 cucchiaini olio evo;Usare poco sale, preferire erbe aromatiche
+Venerdì;Colazione;Raffaella;Porridge di avena con frutta e cioccolato fondente;150g bevanda vegetale + 30g avena + 150g frutta + 10g cioccolato 80%;Alternare frutta o cioccolato fondente 2x/settimana
+Venerdì;Spuntino mattina;Raffaella;Frutta fresca di stagione;150g;Frutta di stagione
+Venerdì;Pranzo;Raffaella;Riso con pollo e verdure;70g riso + 200g pollo + 200g verdure + 2 cucchiaini olio evo;Verdure a piacere
+Venerdì;Merenda;Raffaella;Frutta secca + gallette di riso;10g frutta secca + 20g gallette;Bere acqua o tisana
+Venerdì;Cena;Raffaella;Pesce al forno con patate e verdure;200g pesce + 200g patate + 200g verdure + 2 cucchiaini olio evo;Usare poco sale, preferire erbe aromatiche
+Venerdì;Colazione;Marco;Yogurt greco 0% + fiocchi integrali + miele + frutta secca;130g yogurt + 25g fiocchi + 1 cucchiaino miele + 8g noci;Alternare frutta o cioccolato fondente 2x/settimana
+Venerdì;Spuntino mattina;Marco;Frutta fresca di stagione;150g;Frutta di stagione
+Venerdì;Pranzo;Marco;Pasta integrale con tonno e verdure miste;80g pasta + 100g tonno + 200g verdure + 3 cucchiaini olio evo;Verdure a piacere
+Venerdì;Merenda;Marco;Pane integrale con confettura e burro di arachidi;25g pane + 2 cucchiaini confettura + 5g burro arachidi;Bere acqua o tisana
+Venerdì;Cena;Marco;Merluzzo gratinato + verdure + pane integrale;200g merluzzo + 200g verdure + 70g pane + 2 cucchiaini olio evo;Usare poco sale, preferire erbe aromatiche
+Venerdì;Colazione;Mattia;Yogurt greco 0% + fiocchi integrali + miele + frutta secca;120g yogurt + 25g fiocchi + 1 cucchiaino miele + 8g noci;Alternare frutta o cioccolato fondente 2x/settimana
+Venerdì;Spuntino mattina;Mattia;Frutta fresca di stagione + 1 yogurt piccolo;150g frutta + 100g yogurt;Frutta di stagione
+Venerdì;Pranzo;Mattia;Riso con pollo e verdure;70g riso + 170g pollo + 200g verdure + 2 cucchiaini olio evo;Verdure a piacere
+Venerdì;Merenda;Mattia;Yogurt greco + frutta fresca;100g yogurt + 150g frutta;Bere acqua o tisana
+Venerdì;Cena;Mattia;Frittata con verdure e pane;2 uova + 200g verdure + 60g pane + 2 cucchiaini olio evo;Usare poco sale, preferire erbe aromatiche
+Venerdì;Spuntino extra;Mattia;Barretta ai cereali o frutta secca (10g);10g barretta o frutta secca;Solo nei giorni di allenamento
+Sabato;Merenda;Paolo;Pane integrale con confettura e burro di arachidi;30g pane + 2 cucchiaini confettura + 5g burro arachidi;Bere acqua o tisana
+Sabato;Cena;Paolo;Petto di pollo ai ferri + verdure + pane integrale;200g pollo + 200g verdure + 80g pane + 2 cucchiaini olio evo;Usare poco sale, preferire erbe aromatiche
+Sabato;Colazione;Raffaella;Porridge di avena con frutta e cioccolato fondente;150g bevanda vegetale + 30g avena + 150g frutta + 10g cioccolato 80%;Alternare frutta o cioccolato fondente 2x/settimana
+Sabato;Spuntino mattina;Raffaella;Frutta fresca di stagione;150g;Frutta di stagione
+Sabato;Pranzo;Raffaella;Riso con pollo e verdure;70g riso + 200g pollo + 200g verdure + 2 cucchiaini olio evo;Verdure a piacere
+Sabato;Merenda;Raffaella;Frutta secca + gallette di riso;10g frutta secca + 20g gallette;Bere acqua o tisana
+Sabato;Cena;Raffaella;Pesce al forno con patate e verdure;200g pesce + 200g patate + 200g verdure + 2 cucchiaini olio evo;Usare poco sale, preferire erbe aromatiche
+Sabato;Colazione;Marco;Yogurt greco 0% + fiocchi integrali + miele + frutta secca;130g yogurt + 25g fiocchi + 1 cucchiaino miele + 8g noci;Alternare frutta o cioccolato fondente 2x/settimana
+Sabato;Spuntino mattina;Marco;Frutta fresca di stagione;150g;Frutta di stagione
+Sabato;Pranzo;Marco;Pasta integrale con tonno e verdure miste;80g pasta + 100g tonno + 200g verdure + 3 cucchiaini olio evo;Verdure a piacere
+Sabato;Merenda;Marco;Pane integrale con confettura e burro di arachidi;25g pane + 2 cucchiaini confettura + 5g burro arachidi;Bere acqua o tisana
+Sabato;Cena;Marco;Merluzzo gratinato + verdure + pane integrale;200g merluzzo + 200g verdure + 70g pane + 2 cucchiaini olio evo;Usare poco sale, preferire erbe aromatiche
+Sabato;Colazione;Mattia;Yogurt greco 0% + fiocchi integrali + miele + frutta secca;120g yogurt + 25g fiocchi + 1 cucchiaino miele + 8g noci;Alternare frutta o cioccolato fondente 2x/settimana
+Sabato;Spuntino mattina;Mattia;Frutta fresca di stagione + 1 yogurt piccolo;150g frutta + 100g yogurt;Frutta di stagione
+Sabato;Pranzo;Mattia;Riso con pollo e verdure;70g riso + 170g pollo + 200g verdure + 2 cucchiaini olio evo;Verdure a piacere
+Sabato;Merenda;Mattia;Yogurt greco + frutta fresca;100g yogurt + 150g frutta;Bere acqua o tisana
+Sabato;Cena;Mattia;Frittata con verdure e pane;2 uova + 200g verdure + 60g pane + 2 cucchiaini olio evo;Usare poco sale, preferire erbe aromatiche
+Sabato;Spuntino extra;Mattia;Barretta ai cereali o frutta secca (10g);10g barretta o frutta secca;Solo nei giorni di allenamento
+Domenica;Colazione;Paolo;Yogurt greco 0% + fiocchi di frumento integrale + miele + noci;150g yogurt + 30g fiocchi + 1 cucchiaino miele + 10g noci;Alternare frutta o cioccolato fondente 2x/settimana
+Domenica;Spuntino mattina;Paolo;Frutta fresca di stagione;150g;Frutta di stagione
+Domenica;Pranzo;Paolo;Pasta integrale al pomodoro + mozzarella light + verdure;80g pasta + 100g mozzarella + 200g verdure + 3 cucchiaini olio evo;Verdure a piacere
+Domenica;Merenda;Paolo;Pane integrale con confettura e burro di arachidi;30g pane + 2 cucchiaini confettura + 5g burro arachidi;Bere acqua o tisana
+Domenica;Cena;Paolo;Petto di pollo ai ferri + verdure + pane integrale;200g pollo + 200g verdure + 80g pane + 2 cucchiaini olio evo;Usare poco sale, preferire erbe aromatiche
+Domenica;Colazione;Raffaella;Porridge di avena con frutta e cioccolato fondente;150g bevanda vegetale + 30g avena + 150g frutta + 10g cioccolato 80%;Alternare frutta o cioccolato fondente 2x/settimana
+Domenica;Spuntino mattina;Raffaella;Frutta fresca di stagione;150g;Frutta di stagione
+Domenica;Pranzo;Raffaella;Riso con pollo e verdure;70g riso + 200g pollo + 200g verdure + 2 cucchiaini olio evo;Verdure a piacere
+Domenica;Merenda;Raffaella;Frutta secca + gallette di riso;10g frutta secca + 20g gallette;Bere acqua o tisana
+Domenica;Cena;Raffaella;Pesce al forno con patate e verdure;200g pesce + 200g patate + 200g verdure + 2 cucchiaini olio evo;Usare poco sale, preferire erbe aromatiche
+Domenica;Colazione;Marco;Yogurt greco 0% + fiocchi integrali + miele + frutta secca;130g yogurt + 25g fiocchi + 1 cucchiaino miele + 8g noci;Alternare frutta o cioccolato fondente 2x/settimana
+Domenica;Spuntino mattina;Marco;Frutta fresca di stagione;150g;Frutta di stagione
+Domenica;Pranzo;Marco;Pasta integrale con tonno e verdure miste;80g pasta + 100g tonno + 200g verdure + 3 cucchiaini olio evo;Verdure a piacere
+Domenica;Merenda;Marco;Pane integrale con confettura e burro di arachidi;25g pane + 2 cucchiaini confettura + 5g burro arachidi;Bere acqua o tisana
+Domenica;Cena;Marco;Merluzzo gratinato + verdure + pane integrale;200g merluzzo + 200g verdure + 70g pane + 2 cucchiaini olio evo;Usare poco sale, preferire erbe aromatiche
+Domenica;Colazione;Mattia;Yogurt greco 0% + fiocchi integrali + miele + frutta secca;120g yogurt + 25g fiocchi + 1 cucchiaino miele + 8g noci;Alternare frutta o cioccolato fondente 2x/settimana
+Domenica;Spuntino mattina;Mattia;Frutta fresca di stagione + 1 yogurt piccolo;150g frutta + 100g yogurt;Frutta di stagione
+Domenica;Pranzo;Mattia;Riso con pollo e verdure;70g riso + 170g pollo + 200g verdure + 2 cucchiaini olio evo;Verdure a piacere
+Domenica;Merenda;Mattia;Yogurt greco + frutta fresca;100g yogurt + 150g frutta;Bere acqua o tisana
+Domenica;Cena;Mattia;Frittata con verdure e pane;2 uova + 200g verdure + 60g pane + 2 cucchiaini olio evo;Usare poco sale, preferire erbe aromatiche
+Domenica;Spuntino extra;Mattia;Barretta ai cereali o frutta secca (10g);10g barretta o frutta secca;Solo nei giorni di allenamento`;
+
+        let mealsData = [];
+
+        // Parse CSV data
+        function parseCSV() {
+            const lines = csvData.trim().split('\n');
+            const headers = lines[0].split(';');
+            
+            for (let i = 1; i < lines.length; i++) {
+                const values = lines[i].split(';');
+                if (values.length === headers.length) {
+                    mealsData.push({
+                        giorno: values[0],
+                        pasto: values[1],
+                        persona: values[2],
+                        pietanza: values[3],
+                        quantita: values[4],
+                        note: values[5]
+                    });
+                }
+            }
+        }
+
+        // Get unique values
+        function getUniqueValues(key) {
+            const values = [...new Set(mealsData.map(meal => meal[key]))];
+            return values.sort();
+        }
+
+        // Populate dropdowns
+        function populateDropdowns() {
+            const personSelect = document.getElementById('personSelect');
+            const daySelect = document.getElementById('daySelect');
+
+            const persons = getUniqueValues('persona');
+            const days = ['Lunedì', 'Martedì', 'Mercoledì', 'Giovedì', 'Venerdì', 'Sabato', 'Domenica'];
+
+            persons.forEach(person => {
+                const option = document.createElement('option');
+                option.value = person;
+                option.textContent = person;
+                personSelect.appendChild(option);
+            });
+
+            days.forEach(day => {
+                const option = document.createElement('option');
+                option.value = day;
+                option.textContent = day;
+                daySelect.appendChild(option);
+            });
+        }
+
+        // Filter and display meals
+        function displayMeals() {
+            const personSelect = document.getElementById('personSelect');
+            const daySelect = document.getElementById('daySelect');
+            const mealsContainer = document.getElementById('mealsContainer');
+
+            const selectedPerson = personSelect.value;
+            const selectedDay = daySelect.value;
+
+            if (!selectedPerson || !selectedDay) {
+                mealsContainer.innerHTML = '<div class="no-data">Seleziona una persona e un giorno per visualizzare i pasti</div>';
+                return;
+            }
+
+            const filteredMeals = mealsData.filter(meal => 
+                meal.persona === selectedPerson && meal.giorno === selectedDay
+            );
+
+            if (filteredMeals.length === 0) {
+                mealsContainer.innerHTML = '<div class="no-data">Nessun pasto trovato per questa combinazione</div>';
+                return;
+            }
+
+            // Define meal order
+            const mealOrder = ['Colazione', 'Spuntino mattina', 'Pranzo', 'Merenda', 'Cena', 'Spuntino extra'];
+            
+            // Sort meals by order
+            filteredMeals.sort((a, b) => {
+                return mealOrder.indexOf(a.pasto) - mealOrder.indexOf(b.pasto);
+            });
+
+            let html = '';
+            filteredMeals.forEach(meal => {
+                html += `
+                    <div class="meal-card">
+                        <div class="meal-title">${meal.pasto}</div>
+                        <div class="meal-details">
+                            <div class="detail-row">
+                                <div class="detail-label">Pietanza:</div>
+                                <div class="detail-value">${meal.pietanza}</div>
+                            </div>
+                            <div class="detail-row">
+                                <div class="detail-label">Quantità:</div>
+                                <div class="detail-value">${meal.quantita}</div>
+                            </div>
+                        </div>
+                        ${meal.note ? `<div class="note">💡 ${meal.note}</div>` : ''}
+                    </div>
+                `;
+            });
+
+            mealsContainer.innerHTML = html;
+        }
+
+        // Initialize
+        parseCSV();
+        populateDropdowns();
+
+        // Event listeners
+        document.getElementById('personSelect').addEventListener('change', displayMeals);
+        document.getElementById('daySelect').addEventListener('change', displayMeals);
+    </script>
+</body>
+</html>Colazione;Paolo;Yogurt greco 0% + fiocchi di frumento integrale + miele + noci;150g yogurt + 30g fiocchi + 1 cucchiaino miele + 10g noci;Alternare frutta o cioccolato fondente 2x/settimana
+Sabato;Spuntino mattina;Paolo;Frutta fresca di stagione;150g;Frutta di stagione
+Sabato;Pranzo;Paolo;Pasta integrale al pomodoro + mozzarella light + verdure;80g pasta + 100g mozzarella + 200g verdure + 3 cucchiaini olio evo;Verdure a piacere
+Sabato;
