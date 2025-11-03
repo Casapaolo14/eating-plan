@@ -341,10 +341,10 @@ Domenica,Cena,Mattia,Pasto libero,Pasto libero,`;
         // Parse CSV data
         function parseCSV() {
             const lines = csvData.trim().split('\n');
-            const headers = lines[0].split(';');
+            const headers = lines[0].split(',');
             
             for (let i = 1; i < lines.length; i++) {
-                const values = lines[i].split(';');
+                const values = lines[i].split(',');
                 if (values.length === headers.length) {
                     mealsData.push({
                         giorno: values[0],
